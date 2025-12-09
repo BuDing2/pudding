@@ -225,13 +225,27 @@
             console.log('请求URL:', 'http://121.43.104.146:8088/v1/workflows/run');
             console.log('请求数据:', requestData);
             
-            // 检测当前页面协议，解决本地file://协议和服务器HTTPS协议的兼容性问题
+            // 检测当前环境
             const isLocalFile = window.location.protocol === 'file:';
-            const apiUrl = isLocalFile ? 
-                'http://121.43.104.146:8088/v1/workflows/run' : 
-                '//121.43.104.146:8088/v1/workflows/run';
+            const isGitHubPages = window.location.hostname.includes('github.io');
+            
+            // API服务器只支持HTTP，不支持HTTPS
+            // GitHub Pages强制使用HTTPS，导致混合内容问题
+            // 解决方案：
+            // 1. 长期：让API服务器支持HTTPS
+            // 2. 临时：在GitHub Pages环境下仍使用HTTP（需要浏览器允许混合内容）
+            let apiUrl;
+            if (isLocalFile) {
+                apiUrl = 'http://121.43.104.146:8088/v1/workflows/run';
+            } else if (isGitHubPages) {
+                apiUrl = 'http://121.43.104.146:8088/v1/workflows/run'; // GitHub Pages环境下仍使用HTTP
+                console.warn('GitHub Pages环境下使用HTTP API，可能会被浏览器阻止混合内容。请在浏览器中允许混合内容。');
+            } else {
+                apiUrl = '//121.43.104.146:8088/v1/workflows/run'; // 其他服务器环境使用相对协议
+            }
             
             console.log('使用的API URL:', apiUrl);
+            console.log('当前环境:', isLocalFile ? '本地file://' : isGitHubPages ? 'GitHub Pages' : '其他服务器');
             fetch(apiUrl, {
                 method: 'POST',
                 headers: {
