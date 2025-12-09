@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简历生成</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* 容器样式 */
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        /* 标题样式 */
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #f9fafb;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* 按钮样式 */
+        #submitBtn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 25px;
+        }
+        
+        #submitBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        #submitBtn:active {
+            transform: translateY(0);
+        }
+        
+        /* 结果区域样式 */
+        #result {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        #result h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        #httpResult {
+            color: #475569;
+            font-size: 16px;
+            line-height: 1.6;
+            word-break: break-all;
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        /* 加载状态动画 */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        #httpResult.loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            #submitBtn {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+        }
+        
+        /* 链接样式 */
+        #httpResult a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        #httpResult a:hover {
+            color: #764ba2;
+            border-bottom-color: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <h1>简历生成</h1>
+    
+    <div class="form-group">
+        <label for="inputText">人物信息:</label>
+        <textarea id="inputText" name="inputText" rows="15" cols="60" placeholder="请输入需要处理的文本内容..."></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="selectT">选择模板:</label>
+        <select id="selectT" name="selectT">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select>
+    </div>
+    
+    <button id="submitBtn">提交</button>
+    
+    <div id="result">
+        <h3>返回结果:</h3>
+        <p id="httpResult"></p>
+    </div>
+    </div>
+
+    <script>
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            const input = document.getElementById('inputText').value;
+            const t = document.getElementById('selectT').value;
+
+            const requestData = {
+                "inputs": {
+                    "input": input,
+                    "t": t
+                },
+                "response_mode": "streaming",
+                "user": "1"
+            };
+
+            fetch('http://121.43.104.146:8088/v1/workflows/run', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer app-sEciSYvG1ecydvtGF9AQT4Ej',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                let finalLink = null;
+                const httpResult = document.getElementById('httpResult');
+                httpResult.textContent = '处理中... 请稍候';
+                httpResult.classList.add('loading');
+
+                /** ⭐ 深度搜索整个对象中的 http 字段（自动处理数组 / 嵌套对象） */
+                function deepFindHttp(obj) {
+                    if (!obj) return null;
+
+                    if (typeof obj === 'string' && obj.startsWith("http")) {
+                        return obj;
+                    }
+
+                    if (typeof obj === 'object') {
+                        if (obj.http && typeof obj.http === 'string') {
+                            return obj.http;
+                        }
+                        for (const key in obj) {
+                            const value = obj[key];
+                            if (Array.isArray(value)) {
+                                for (const item of value) {
+                                    const found = deepFindHttp(item);
+                                    if (found) return found;
+                                }
+                            } else if (typeof value === 'object') {
+                                const found = deepFindHttp(value);
+                                if (found) return found;
+                            } else if (typeof value === 'string' && value.startsWith("http")) {
+                                return value;
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                return reader.read().then(function processText({ done, value }) {
+                    if (done) {
+                        console.log("流已关闭");
+                        httpResult.classList.remove('loading');
+                        if (finalLink) {
+                            httpResult.innerHTML = `文件链接: <a href="${finalLink}" target="_blank">${finalLink}</a>`;
+                        } else {
+                            httpResult.textContent = '处理已完成，但未找到链接结果';
+                        }
+                        return;
+                    }
+
+                    const text = decoder.decode(value, { stream: true });
+                    buffer += text;
+
+                    const messages = buffer.split(/\r?\n\r?\n/);
+
+                    for (let i = 0; i < messages.length - 1; i++) {
+                        const message = messages[i];
+                        if (!message.trim()) continue;
+
+                        try {
+                            const lines = message.split(/\r?\n/);
+                            let eventType = null;
+                            let eventData = null;
+
+                            for (const line of lines) {
+                                if (line.startsWith('event:')) {
+                                    eventType = line.substring(6).trim();
+                                } else if (line.startsWith('data:')) {
+                                    const dataPart = line.substring(5).trim();
+                                    if (dataPart) {
+                                        try {
+                                            eventData = JSON.parse(dataPart);
+                                        } catch {}
+                                    }
+                                }
+                            }
+
+                            if (!eventType && eventData?.event) {
+                                eventType = eventData.event;
+                            }
+
+                            if (eventData) {
+                                console.log("事件:", eventType, eventData);
+
+                                if (eventType === "node_finished" || eventType === "workflow_finished" || eventType === "workflow_completed") {
+                                    
+                                    const foundLink = deepFindHttp(eventData);
+                                    if (foundLink) {
+                                        finalLink = foundLink.replace(/[`"'\s]/g, '');
+                                        httpResult.textContent = finalLink;
+                                    }
+                                }
+                            }
+
+                        } catch (e) {
+                            console.error("解析SSE消息出错:", e);
+                        }
+                    }
+
+                    buffer = messages[messages.length - 1];
+                    return reader.read().then(processText);
+                });
+            })
+            .catch(error => {
+                const httpResult = document.getElementById('httpResult');
+                httpResult.classList.remove('loading');
+                httpResult.textContent = '请求失败: ' + error.message;
+            });
+        });
+    </script>
+</body>
+</html>
