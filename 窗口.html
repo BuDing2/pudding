@@ -14,9 +14,9 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #F7F8FA;
             min-height: 100vh;
-            padding: 20px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -25,11 +25,11 @@
         /* 容器样式 */
         .container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
             padding: 30px;
             width: 100%;
-            max-width: 600px;
+            max-width: 650px;
         }
         
         /* 标题样式 */
@@ -70,19 +70,19 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3B82F6;
             background-color: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
         /* 按钮样式 */
         #submitBtn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #3B82F6;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -91,8 +91,9 @@
         }
         
         #submitBtn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background-color: #2563EB;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
         }
         
         #submitBtn:active {
@@ -102,9 +103,10 @@
         /* 结果区域样式 */
         #result {
             background: #f8fafc;
-            border-radius: 8px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 24px;
             border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         
         #result h3 {
@@ -164,7 +166,7 @@
         
         /* 链接样式 */
         #httpResult a {
-            color: #667eea;
+            color: #3B82F6;
             text-decoration: none;
             font-weight: 500;
             border-bottom: 1px solid transparent;
@@ -172,8 +174,8 @@
         }
         
         #httpResult a:hover {
-            color: #764ba2;
-            border-bottom-color: #764ba2;
+            color: #2563EB;
+            border-bottom-color: #2563EB;
         }
     </style>
 </head>
@@ -219,7 +221,18 @@
                 "user": "1"
             };
 
-            fetch('http://121.43.104.146:8088/v1/workflows/run', {
+            console.log('准备发送请求...');
+            console.log('请求URL:', 'http://121.43.104.146:8088/v1/workflows/run');
+            console.log('请求数据:', requestData);
+            
+            // 检测当前页面协议，解决本地file://协议和服务器HTTPS协议的兼容性问题
+            const isLocalFile = window.location.protocol === 'file:';
+            const apiUrl = isLocalFile ? 
+                'http://121.43.104.146:8088/v1/workflows/run' : 
+                '//121.43.104.146:8088/v1/workflows/run';
+            
+            console.log('使用的API URL:', apiUrl);
+            fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer app-sEciSYvG1ecydvtGF9AQT4Ej',
@@ -228,8 +241,9 @@
                 body: JSON.stringify(requestData)
             })
             .then(response => {
+                console.log('收到响应:', response);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
                 }
 
                 const reader = response.body.getReader();
@@ -336,9 +350,13 @@
                 });
             })
             .catch(error => {
+                console.error('请求错误:', error);
+                console.error('错误类型:', error.name);
+                console.error('错误信息:', error.message);
+                console.error('错误堆栈:', error.stack);
                 const httpResult = document.getElementById('httpResult');
                 httpResult.classList.remove('loading');
-                httpResult.textContent = '请求失败: ' + error.message;
+                httpResult.textContent = '请求失败: ' + error.message + ' (请查看浏览器控制台获取详细信息)';
             });
         });
     </script>
