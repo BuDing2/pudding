@@ -227,25 +227,46 @@
             
             // 检测当前环境
             const isLocalFile = window.location.protocol === 'file:';
+            const isHttps = window.location.protocol === 'https:';
             const isGitHubPages = window.location.hostname.includes('github.io');
             
             // API服务器只支持HTTP，不支持HTTPS
-            // GitHub Pages强制使用HTTPS，导致混合内容问题
-            // 解决方案：
-            // 1. 长期：让API服务器支持HTTPS
-            // 2. 临时：在GitHub Pages环境下仍使用HTTP（需要浏览器允许混合内容）
+            // GitHub Pages强制使用HTTPS，导致浏览器阻止混合内容
             let apiUrl;
+            let mixedContentWarning = false;
+            
             if (isLocalFile) {
+                // 本地文件直接使用HTTP
                 apiUrl = 'http://121.43.104.146:8088/v1/workflows/run';
-            } else if (isGitHubPages) {
-                apiUrl = 'http://121.43.104.146:8088/v1/workflows/run'; // GitHub Pages环境下仍使用HTTP
-                console.warn('GitHub Pages环境下使用HTTP API，可能会被浏览器阻止混合内容。请在浏览器中允许混合内容。');
+            } else if (isHttps) {
+                // HTTPS环境下使用HTTP API会导致混合内容问题
+                apiUrl = 'http://121.43.104.146:8088/v1/workflows/run';
+                mixedContentWarning = true;
             } else {
-                apiUrl = '//121.43.104.146:8088/v1/workflows/run'; // 其他服务器环境使用相对协议
+                // HTTP环境下使用HTTP API
+                apiUrl = 'http://121.43.104.146:8088/v1/workflows/run';
             }
             
             console.log('使用的API URL:', apiUrl);
-            console.log('当前环境:', isLocalFile ? '本地file://' : isGitHubPages ? 'GitHub Pages' : '其他服务器');
+            console.log('当前环境:', {
+                isLocalFile,
+                isHttps,
+                isGitHubPages,
+                mixedContentWarning
+            });
+            
+            // 如果是混合内容环境，显示详细的警告信息
+            if (mixedContentWarning) {
+                const warningMessage = `⚠️ 警告：当前使用HTTPS页面访问HTTP API，浏览器会阻止混合内容请求。\n\n` +
+                                      `解决方案：\n` +
+                                      `1. 点击浏览器地址栏的🔒或⚠️图标\n` +
+                                      `2. 选择"允许不安全的内容"或"加载不安全的脚本"\n` +
+                                      `3. 刷新页面并重试\n\n` +
+                                      `长期解决方案：请联系API服务器管理员配置SSL证书以支持HTTPS。`;
+                
+                console.warn(warningMessage);
+                alert(warningMessage); // 显示弹窗警告用户
+            }
             fetch(apiUrl, {
                 method: 'POST',
                 headers: {
@@ -370,7 +391,18 @@
                 console.error('错误堆栈:', error.stack);
                 const httpResult = document.getElementById('httpResult');
                 httpResult.classList.remove('loading');
-                httpResult.textContent = '请求失败: ' + error.message + ' (请查看浏览器控制台获取详细信息)';
+                
+                // 检测是否是混合内容错误
+                if (error.message.includes('mixed content') || error.message.includes('Mixed Content')) {
+                    httpResult.innerHTML = `请求失败: 浏览器阻止了混合内容请求<br/><br/>` +
+                                          `解决方案：<br/>` +
+                                          `1. 点击浏览器地址栏的🔒或⚠️图标<br/>` +
+                                          `2. 选择"允许不安全的内容"<br/>` +
+                                          `3. 刷新页面并重试`;
+                } else {
+                    httpResult.innerHTML = `请求失败: ${error.message}<br/><br/>` +
+                                          `请查看浏览器控制台获取详细信息`;
+                }
             });
         });
     </script>
